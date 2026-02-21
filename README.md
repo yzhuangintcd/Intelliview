@@ -18,7 +18,7 @@ Traditional hiring processes are:
 
 Intelliviews transforms hiring by:
 
-### 🤖 AI-Powered Interviewers
+### 🤖 AI-Agent Interviewers
 - Intelligent agents conduct dynamic, personalized interviews
 - Adaptive questioning based on candidate responses
 - Unbiased evaluation using consistent criteria
@@ -53,9 +53,6 @@ Intelliviews transforms hiring by:
 
 [Add installation and setup instructions here as the project develops]
 
-## 📝 License
-
-[Add license information]
 
 ---
 
