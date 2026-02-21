@@ -28,8 +28,6 @@ export interface InterviewerDef {
 interface SceneProps {
   interviewers: InterviewerDef[];
   onSelect: (id: string) => void;
-  hoveredId: string | null;
-  onHover: (id: string | null) => void;
 }
 
 /* ════════════════════════════════════════════════════════════

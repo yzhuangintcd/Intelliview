@@ -109,8 +109,6 @@ export default function InterviewDashboard() {
           <ConferenceScene
             interviewers={interviewers}
             onSelect={handleSelect}
-            hoveredId={hoveredId}
-            onHover={setHoveredId}
           />
         </Suspense>
       </div>
