@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Environment,
@@ -41,11 +41,6 @@ function Character({
   hairColor,
   hairStyle,
   shirtColor,
-  name,
-  role,
-  isHovered,
-  onPointerOver,
-  onPointerOut,
   onClick,
 }: {
   position: [number, number, number];
@@ -53,11 +48,6 @@ function Character({
   hairColor: string;
   hairStyle: "short" | "medium" | "long";
   shirtColor: string;
-  name: string;
-  role: string;
-  isHovered: boolean;
-  onPointerOver: () => void;
-  onPointerOut: () => void;
   onClick: () => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -67,26 +57,12 @@ function Character({
     const t = state.clock.elapsedTime;
     groupRef.current.position.y =
       position[1] + Math.sin(t * 0.8 + position[0] * 2) * 0.003;
-    const target = isHovered ? -0.03 : 0;
-    groupRef.current.rotation.x = THREE.MathUtils.lerp(
-      groupRef.current.rotation.x,
-      target,
-      0.05,
-    );
   });
 
   return (
     <group
       ref={groupRef}
       position={position}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        onPointerOver();
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        onPointerOut();
-      }}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
@@ -179,43 +155,6 @@ function Character({
         </group>
       ))}
 
-      {/* Name label */}
-      <group position={[0, 1.72, 0]}>
-        <Text fontSize={0.06} color="#2a3a4a" anchorX="center" anchorY="middle">
-          {name}
-        </Text>
-        <Text
-          position={[0, -0.065, 0]}
-          fontSize={0.038}
-          color="#7a8a9a"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {role}
-        </Text>
-      </group>
-
-      {/* Hover indicator */}
-      {isHovered && (
-        <group>
-          <pointLight
-            position={[0, 1.2, 0.5]}
-            intensity={1.2}
-            color="#fff8e8"
-            distance={1.2}
-          />
-          <Text
-            position={[0, 1.86, 0]}
-            fontSize={0.04}
-            color="#2a6b4a"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Click to begin →
-          </Text>
-          <Plumbob position={[0, 1.98, 0]} />
-        </group>
-      )}
     </group>
   );
 }
@@ -260,45 +199,6 @@ function HairMesh({
           ))}
         </>
       )}
-    </group>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   PLUMBOB
-   ════════════════════════════════════════════════════════════ */
-function Plumbob({ position }: { position: [number, number, number] }) {
-  const ref = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (!ref.current) return;
-    const t = state.clock.elapsedTime;
-    ref.current.rotation.y = t * 1.5;
-    ref.current.position.y = position[1] + Math.sin(t * 2) * 0.025;
-  });
-
-  return (
-    <group ref={ref} position={position}>
-      <mesh position={[0, 0.025, 0]}>
-        <coneGeometry args={[0.03, 0.05, 6]} />
-        <meshStandardMaterial
-          color="#4ade80"
-          emissive="#22c55e"
-          emissiveIntensity={0.5}
-          transparent
-          opacity={0.8}
-        />
-      </mesh>
-      <mesh position={[0, -0.025, 0]} rotation={[Math.PI, 0, 0]}>
-        <coneGeometry args={[0.03, 0.05, 6]} />
-        <meshStandardMaterial
-          color="#4ade80"
-          emissive="#22c55e"
-          emissiveIntensity={0.5}
-          transparent
-          opacity={0.8}
-        />
-      </mesh>
     </group>
   );
 }
@@ -513,13 +413,9 @@ function CameraRig() {
 export default function ConferenceScene({
   interviewers,
   onSelect,
-  hoveredId,
-  onHover,
 }: SceneProps) {
-  const [cursor, setCursor] = useState("default");
-
   return (
-    <div className="w-full h-full" style={{ cursor }}>
+    <div className="w-full h-full">
       <Canvas
         shadows
         camera={{ position: [0, 1.6, 3.0], fov: 52 }}
@@ -528,7 +424,6 @@ export default function ConferenceScene({
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.5,
         }}
-        onPointerMissed={() => onHover(null)}
       >
         <color attach="background" args={["#eae4d8"]} />
         <CameraRig />
@@ -560,17 +455,6 @@ export default function ConferenceScene({
             hairColor={p.hairColor}
             hairStyle={p.hairStyle}
             shirtColor={p.shirtColor}
-            name={p.name}
-            role={p.role}
-            isHovered={hoveredId === p.id}
-            onPointerOver={() => {
-              onHover(p.id);
-              setCursor("pointer");
-            }}
-            onPointerOut={() => {
-              onHover(null);
-              setCursor("default");
-            }}
             onClick={() => onSelect(p.id)}
           />
         ))}
