@@ -1,5 +1,275 @@
-import MainRouter from './MainRouter';
+"use client";
 
-export default function Page() {
-  return <MainRouter />;
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import type { InterviewerDef } from "./ConferenceScene";
+import type OrigConferenceScene from "./ConferenceScene";
+
+const ConferenceScene = dynamic(() => import("./ConferenceScene"), {
+  ssr: false,
+}) as typeof OrigConferenceScene;
+
+/* ─── Interview stages ─── */
+const interviewers: (InterviewerDef & {
+  title: string;
+  description: string;
+  href: string;
+  duration: string;
+  step: number;
+  focus: string[];
+})[] = [
+  {
+    id: "technical",
+    name: "Alex Chen",
+    role: "Senior Engineer",
+    title: "Technical Discussion",
+    description:
+      "A conversational technical session where you'll walk through coding scenarios, discuss system design approaches, and demonstrate your problem-solving process.",
+    href: "/interview_environment/technical",
+    duration: "30 min",
+    step: 1,
+    accent: "#2a6b8a",
+    focus: ["Problem Solving", "Code Walkthrough", "System Thinking"],
+    skinTone: "#deb887",
+    hairColor: "#1a1a2e",
+    hairStyle: "short",
+    shirtColor: "#2a5a8a",
+    seatX: -1.6,
+  },
+  {
+    id: "behavioural",
+    name: "Maya Johnson",
+    role: "People & Culture Lead",
+    title: "Behavioural Conversation",
+    description:
+      "A warm, open discussion about your experiences, how you handle workplace situations, collaborate with teams, and approach challenges with integrity.",
+    href: "/interview_environment/behavioural",
+    duration: "25 min",
+    step: 2,
+    accent: "#6b4a8a",
+    focus: ["Communication", "Teamwork", "Leadership"],
+    skinTone: "#8d5524",
+    hairColor: "#2a1a0a",
+    hairStyle: "long",
+    shirtColor: "#6b4a8a",
+    seatX: 0,
+  },
+  {
+    id: "simulation",
+    name: "Jordan Park",
+    role: "Engineering Manager",
+    title: "Day-in-the-Life Simulation",
+    description:
+      "Experience a realistic work scenario — manage tasks, respond to messages, and prioritize work just like you would on day one. Show us how you operate.",
+    href: "/interview_environment/simulation",
+    duration: "35 min",
+    step: 3,
+    accent: "#8a6b2a",
+    focus: ["Prioritization", "Decision Making", "Execution"],
+    skinTone: "#f1c27d",
+    hairColor: "#4a3728",
+    hairStyle: "medium",
+    shirtColor: "#8a6b2a",
+    seatX: 1.6,
+  },
+];
+
+export default function InterviewDashboard() {
+  const router = useRouter();
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const hovered = interviewers.find((i) => i.id === hoveredId) ?? null;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  function handleSelect(id: string) {
+    const person = interviewers.find((i) => i.id === id);
+    if (person) router.push(person.href);
+  }
+
+  return (
+    <div className="relative flex flex-col min-h-[calc(100vh-7rem)] bg-[#f5f0e8] overflow-hidden">
+      {/* 3D Canvas */}
+      <div className="absolute inset-0 z-0">
+        <Suspense
+          fallback={
+            <div className="w-full h-full flex items-center justify-center bg-[#f5f0e8]">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-10 w-10 rounded-full border-2 border-[#8a7a5a] border-t-transparent animate-spin" />
+                <span className="text-sm text-[#6b5a3a] font-medium">
+                  Preparing your interview room...
+                </span>
+              </div>
+            </div>
+          }
+        >
+          <ConferenceScene
+            interviewers={interviewers}
+            onSelect={handleSelect}
+            hoveredId={hoveredId}
+            onHover={setHoveredId}
+          />
+        </Suspense>
+      </div>
+
+      {/* Top Overlay */}
+      <div
+        className={`relative z-10 flex flex-col items-center pointer-events-none transition-all duration-1000 ${
+          mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+        }`}
+      >
+        <section className="text-center pt-4 pb-2">
+          <p className="text-[11px] uppercase tracking-[0.2em] font-semibold text-[#5a8a5e] mb-1">
+            Interview in Progress
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-[#2a3a2a] drop-shadow-sm">
+            Welcome to Your Interview 👋
+          </h1>
+          <p className="mt-1.5 max-w-md mx-auto text-[#6b6a5a] leading-relaxed text-xs">
+            Your interviewers are ready to meet you. Click on any panel member
+            to begin that stage. Take your time — we&apos;re rooting for you.
+          </p>
+        </section>
+
+        {/* Step indicators */}
+        <section className="flex items-center gap-2 mt-1 pointer-events-auto">
+          {interviewers.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => handleSelect(p.id)}
+              onMouseEnter={() => setHoveredId(p.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                hoveredId === p.id
+                  ? "bg-white shadow-md border-[#c0b898] text-[#2a3a2a]"
+                  : "bg-white/60 border-[#d8d0c0] text-[#6b6a5a] hover:bg-white/80"
+              }`}
+            >
+              <span className="flex items-center justify-center h-5 w-5 rounded-full bg-[#f0ebe3] text-[10px] font-bold text-[#6b5a3a] border border-[#d8d0c0]">
+                {p.step}
+              </span>
+              <span>{p.title}</span>
+            </button>
+          ))}
+        </section>
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Bottom Panel */}
+      <div
+        className={`relative z-10 flex flex-col items-center pb-4 px-4 pointer-events-none transition-all duration-1000 delay-300 ${
+          mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
+      >
+        {/* Hover detail card */}
+        <section
+          className={`w-full max-w-xl transition-all duration-500 pointer-events-auto ${
+            hovered
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-3 pointer-events-none"
+          }`}
+        >
+          {hovered && (
+            <div className="rounded-2xl border border-[#d8d0c0] bg-white/90 backdrop-blur-lg p-5 shadow-lg">
+              <div className="flex items-start gap-4">
+                {/* Avatar icon */}
+                <div className="relative shrink-0">
+                  <div
+                    className="w-14 h-14 rounded-xl border-2 border-[#c0b898] shadow-sm flex items-center justify-center"
+                    style={{
+                      background: `linear-gradient(135deg, ${hovered.shirtColor}44, ${hovered.accent}33)`,
+                    }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div
+                        className="w-7 h-7 rounded-full border-2 border-white/60"
+                        style={{ backgroundColor: hovered.skinTone }}
+                      />
+                      <div
+                        className="w-8 h-4 rounded-t-lg -mt-0.5"
+                        style={{ backgroundColor: hovered.shirtColor }}
+                      />
+                    </div>
+                  </div>
+                  <div className="absolute -top-1 -left-1 flex items-center justify-center h-5 w-5 rounded-full bg-[#5a8a5e] text-[9px] font-bold text-white">
+                    {hovered.step}
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-sm text-[#2a3a2a]">
+                      Step {hovered.step}: {hovered.title}
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-[#5a8a5e] font-medium mb-1.5">
+                    with {hovered.name}, {hovered.role}
+                  </p>
+                  <p className="text-xs text-[#6b6a5a] leading-relaxed mb-3">
+                    {hovered.description}
+                  </p>
+                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                    {hovered.focus.map((f: string) => (
+                      <span
+                        key={f}
+                        className="text-[10px] px-2.5 py-0.5 rounded-full font-medium bg-[#f0ebe3] text-[#6b5a3a] border border-[#d8d0c0]"
+                      >
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-4 text-[10px] text-[#8a8a7a]">
+                    <span>⏱ {hovered.duration}</span>
+                    <span>📋 Conversational format</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleSelect(hovered.id)}
+                  className="shrink-0 self-center px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-[#2a6b4a] hover:bg-[#1f5a3a] transition-all shadow-md hover:shadow-lg active:scale-95"
+                >
+                  Begin Stage {hovered.step} →
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Encouragement bar */}
+        <section className="w-full max-w-xl mt-3 pointer-events-auto">
+          <div className="rounded-xl border border-[#d8d0c0] bg-white/70 backdrop-blur-md p-3">
+            <div className="flex items-center justify-center gap-1 mb-2">
+              {interviewers.map((p, i) => (
+                <div key={p.id} className="flex items-center">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5">
+                    <span className="h-5 w-5 rounded-full bg-[#f0ebe3] border border-[#d8d0c0] flex items-center justify-center text-[9px] font-bold text-[#6b5a3a]">
+                      {p.step}
+                    </span>
+                    <span className="text-[10px] text-[#6b6a5a] font-medium">
+                      {p.title.split(" ").slice(0, 1).join("")}
+                    </span>
+                  </div>
+                  {i < interviewers.length - 1 && (
+                    <div className="w-8 h-px bg-[#d8d0c0]" />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="text-center border-t border-[#e8e0d4] pt-2">
+              <p className="text-[10px] text-[#5a8a5e] font-medium">
+                🌟 You were selected from many applicants for this interview —
+                you belong here. Take a breath, be yourself, and show them what
+                you can do.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }
