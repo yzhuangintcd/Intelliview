@@ -60,112 +60,273 @@ const tasks = [
             "What would be a realistic, incremental approach?",
         ],
     },
+    {
+        id: 2,
+        title: "Production Outage: Incident Response",
+        difficulty: "Hard",
+        type: "scenario",
+        description:
+            "It's 2 AM on Saturday. Your monitoring alerts you that the API is returning 503 errors for 60% of requests. The database connection pool is exhausted. You're the on-call engineer.\n\nContext:\n- Big product launch happened 6 hours ago\n- Traffic is 5x normal levels\n- CEO is awake and messaging in Slack\n- Your team lead is unreachable (camping, no signal)\n- Database admin is in Europe (won't be online for 5 hours)\n- Last deploy was 3 days ago, no recent changes\n- Rolling back would lose customer data from the past 6 hours\n\nQuestion: Walk through your incident response process step-by-step.",
+        starterCode: `Your incident response plan:
+
+1. Immediate Triage (First 10 minutes):
+   - What data do you check first:
+   - Quick wins to reduce customer impact:
+   - What you DON'T do right now:
+
+2. Investigation (Next 20 minutes):
+   - Hypothesis 1:
+     How to test:
+     
+   - Hypothesis 2:
+     How to test:
+     
+   - Hypothesis 3:
+     How to test:
+
+3. Communication:
+   - Message to CEO (right now):
+   
+   
+   - Message to engineering team Slack:
+   
+   
+   - Customer-facing status page update:
+   
+   
+   - Update frequency plan:
+
+4. Fix Strategy:
+   
+   Option A: Increase DB connection pool immediately
+     Pros:
+     Cons:
+     Rollback plan:
+   
+   Option B: Add rate limiting to shed load
+     Pros:
+     Cons:
+     Rollback plan:
+   
+   Option C: Scale up database resources
+     Pros:
+     Cons:
+     Rollback plan:
+
+5. Your Decision & Reasoning:
+   
+
+6. Post-Incident Actions:
+   - Immediate follow-up:
+   - Postmortem agenda:
+   - Prevention measures:
+`,
+        hints: [
+            "How do you balance quick mitigation vs. finding root cause?",
+            "What's your communication strategy under pressure?",
+            "How do you decide between risky fixes and safe options?",
+            "What if your first fix makes things worse?",
+        ],
+    },
+    {
+        id: 3,
+        title: "Architecture Decision: Microservices Migration",
+        difficulty: "Hard",
+        type: "scenario",
+        description:
+            "Your company's monolithic Rails app is 8 years old, 500K lines of code, and handles 50M requests/day. The engineering team has grown from 5 to 50 people, and developers are stepping on each other's toes. Deploy times are 45 minutes and the test suite takes 2 hours.\n\nYour new CTO (hired from Netflix) wants to migrate to microservices. The proposal:\n- Break into 15-20 services\n- Use Kubernetes for orchestration\n- Estimated migration: 12-18 months\n- Requires hiring 10 more engineers\n- Pause most feature development during migration\n\nThe CEO is concerned about the cost and timeline. The product team is frustrated about pausing features. Some senior engineers are excited, others think it's premature.\n\nQuestion: How do you evaluate this decision and make a recommendation?",
+        starterCode: `Your evaluation framework:
+
+1. Current System Assessment:
+   - Real problems we're facing:
+   - Problems that are NOT caused by the monolith:
+   - Pain points that will get worse:
+   - What's actually working well:
+
+2. Alternatives to Full Migration:
+   
+   Option A: Full microservices migration (CTO's proposal)
+     Timeline:
+     Cost:
+     Risks:
+     Benefits:
+     Team impact:
+   
+   Option B: Modular monolith with better boundaries
+     Timeline:
+     Cost:
+     Risks:
+     Benefits:
+     Team impact:
+   
+   Option C: Extract 2-3 critical services, keep the rest
+     Timeline:
+     Cost:
+     Risks:
+     Benefits:
+     Team impact:
+   
+   Option D: (Your alternative)
+     
+
+3. Key Questions to Answer:
+   - For CTO:
+   - For CEO:
+   - For engineering team:
+   - For product team:
+
+4. Your Recommendation:
+   
+
+5. If You Recommend Migration:
+   - Phase 1:
+   - Phase 2:
+   - Phase 3:
+   - Success metrics:
+   - Rollback strategy:
+
+6. Communication Plan:
+   - To CTO (how to frame your analysis):
+   - To CEO (business case):
+   - To engineering team:
+   - To product team:
+`,
+        hints: [
+            "Is microservices the solution, or is it solving organizational problems?",
+            "What's the minimum viable migration that proves value?",
+            "How do you navigate disagreement with your CTO?",
+            "What evidence would change your mind?",
+        ],
+    },
+    {
+        id: 4,
+        title: "Team Conflict: Code Review Standards",
+        difficulty: "Hard",
+        type: "scenario",
+        description:
+            "Your team is split into two camps over code review practices:\n\nCamp A (3 senior engineers): Want rigorous reviews, block PRs for style issues, insist on 100% test coverage, and believe 'slow and right' is better than 'fast and broken.' Their reviews take 2-3 days.\n\nCamp B (5 mid-level engineers): Frustrated by nitpicking, feel seniors are gatekeeping, want to ship faster, and argue that perfect is the enemy of good. They're threatening to leave.\n\nMeanwhile:\n- Your PM is upset about missed deadlines\n- Two PRs have been open for a week with 50+ comments\n- One engineer stopped submitting PRs entirely out of anxiety\n- The team's velocity has dropped 40%\n- You just hired 3 junior engineers who need guidance\n\nQuestion: How do you resolve this conflict and establish team norms?",
+        starterCode: `Your resolution strategy:
+
+1. Root Cause Analysis:
+   - What Camp A really wants:
+   - What Camp B really wants:
+   - Underlying fears/motivations:
+   - Legitimate concerns from each side:
+
+2. Data Gathering:
+   - Metrics to review:
+   - Questions for each camp:
+   - Questions for PM:
+   - Code quality assessment:
+
+3. Proposed Solution:
+   
+   Team Norms:
+   - What requires rigorous review:
+   - What can be fast-tracked:
+   - Review time SLA:
+   - How to handle disagreements:
+   
+   Technical Standards:
+   - Test coverage requirement:
+   - Style/lint rules:
+   - When to allow exceptions:
+   - Documentation requirements:
+   
+   Process Changes:
+   - Review assignment:
+   - Escalation path:
+   - How to mentor juniors:
+
+4. Implementation Plan:
+   - Week 1:
+   - Week 2-4:
+   - How you'll measure success:
+
+5. Communication:
+   - Team meeting agenda:
+   - How you'll frame this to Camp A:
+   - How you'll frame this to Camp B:
+   - Message to PM:
+
+6. Handling Resistance:
+   - If seniors refuse to compromise:
+   - If mid-levels keep rushing:
+   - If someone threatens to quit:
+   - Your escalation path:
+`,
+        hints: [
+            "Is this really about code review, or about trust and respect?",
+            "How do you balance code quality with team morale?",
+            "What's your role as a leader vs. as a technical contributor?",
+            "Can you find common ground both sides can agree on?",
+        ],
+    },
 ];
 
 export default function Technical2Page() {
-    const [activeTask, setActiveTask] = useState(0);
-    const [code, setCode] = useState(tasks[0].starterCode);
+    // Select one random question for this candidate
+    const [selectedTask, setSelectedTask] = useState<typeof tasks[0] | null>(null);
+    const [code, setCode] = useState("");
     const [showHints, setShowHints] = useState(false);
     const [output, setOutput] = useState("");
-    const [taskStartTimes, setTaskStartTimes] = useState<Record<number, number>>({});
-    const [submittedTasks, setSubmittedTasks] = useState<Set<number>>(new Set());
-    const [taskResponses, setTaskResponses] = useState<Record<number, string>>({});
+    const [startTime, setStartTime] = useState<number>(0);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const [candidateEmail, setCandidateEmail] = useState('candidate@example.com');
 
-    const task = tasks[activeTask];
-
-    // Load progress from localStorage on mount
+    // Initialize with random question on mount
     useEffect(() => {
-        const savedResponses = localStorage.getItem('technical2_responses');
-        if (savedResponses) {
-            try {
-                setTaskResponses(JSON.parse(savedResponses));
-            } catch (e) {
-                console.error('Failed to parse saved responses', e);
-            }
-        }
+        // Get previous question ID to avoid showing the same one
+        const previousTaskId = localStorage.getItem('technical2_previousTaskId');
         
-        const savedCompleted = localStorage.getItem('technical2_completed');
-        if (savedCompleted) {
-            try {
-                setSubmittedTasks(new Set(JSON.parse(savedCompleted)));
-            } catch (e) {
-                console.error('Failed to parse completed tasks', e);
-            }
-        }
-
+        // Filter out the previous question if it exists
+        const availableTasks = previousTaskId 
+            ? tasks.filter(t => t.id !== parseInt(previousTaskId))
+            : tasks;
+        
+        // Select random question from available tasks
+        const task = availableTasks[Math.floor(Math.random() * availableTasks.length)];
+        
+        // Save this question as the previous one for next time
+        localStorage.setItem('technical2_previousTaskId', task.id.toString());
+        
+        setSelectedTask(task);
+        
+        // Start fresh - load starter code for this question
+        setCode(task.starterCode);
+        setIsSubmitted(false);
+        
+        // Set start time
+        const now = Date.now();
+        setStartTime(now);
+        
         const email = localStorage.getItem('candidateEmail');
         if (email) {
             setCandidateEmail(email);
         }
     }, []);
 
-    // Load code for current task
-    useEffect(() => {
-        const savedCode = taskResponses[task.id];
-        if (savedCode) {
-            setCode(savedCode);
-        } else {
-            setCode(task.starterCode);
-        }
-    }, [activeTask]);
-
-    // Save responses to localStorage whenever they change
-    useEffect(() => {
-        if (Object.keys(taskResponses).length > 0) {
-            localStorage.setItem('technical2_responses', JSON.stringify(taskResponses));
-        }
-    }, [taskResponses]);
-
-    // Save completed tasks to localStorage
-    useEffect(() => {
-        if (submittedTasks.size > 0) {
-            localStorage.setItem('technical2_completed', JSON.stringify(Array.from(submittedTasks)));
-        }
-    }, [submittedTasks]);
-
-    // Track start time when a task is opened
-    useEffect(() => {
-        if (!taskStartTimes[task.id]) {
-            setTaskStartTimes(prev => ({ ...prev, [task.id]: Date.now() }));
-        }
-    }, [task.id, taskStartTimes]);
-
-    function handleTaskSwitch(idx: number) {
-        // Save current code before switching
-        setTaskResponses(prev => ({
-            ...prev,
-            [task.id]: code
-        }));
-        
-        setActiveTask(idx);
-        setShowHints(false);
-        setOutput("");
+    if (!selectedTask) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>;
     }
+
+    const task = selectedTask;
 
     function handleCodeChange(newCode: string) {
         setCode(newCode);
-        // Auto-save as they type
-        setTaskResponses(prev => ({
-            ...prev,
-            [task.id]: newCode
-        }));
     }
 
     function handleRun() {
-        if (submittedTasks.has(task.id)) return;
-        setOutput("▶ Analyzing your response...\n\n✅ Structure detected.\n\n[AI Agent]: I can see your thought process. Let me ask some follow-up questions about your reasoning...");
+        if (isSubmitted) return;
+        setOutput("▶ Analyzing your response...\n\n[AI Agent]: I'm reviewing your structured approach. How would you present this analysis to someone who disagrees with your recommendation?");
     }
 
-    const isTaskCompleted = submittedTasks.has(task.id);
-
     async function handleSubmit() {
-        if (isTaskCompleted) return;
+        if (isSubmitted) return;
         
-        setOutput("📤 Submitting response...\n\n[AI Agent]: Processing your submission...");
+        setOutput("📤 Submitting response...\n\n[AI Agent]: Processing your analysis...");
         
         // Calculate time spent
-        const startTime = taskStartTimes[task.id] || Date.now();
         const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
 
         // Save to database
@@ -209,26 +370,6 @@ export default function Technical2Page() {
         <div className="flex h-[calc(100vh-7rem)] overflow-hidden">
             {/* ─── Left Panel: Task description ─── */}
             <div className="w-[420px] shrink-0 border-r border-zinc-800 bg-zinc-900 flex flex-col overflow-y-auto">
-                {/* Task selector tabs */}
-                <div className="flex border-b border-zinc-800">
-                    {tasks.map((t, idx) => {
-                        const isCompleted = submittedTasks.has(t.id);
-                        return (
-                            <button
-                                key={t.id}
-                                onClick={() => handleTaskSwitch(idx)}
-                                className={`flex-1 px-3 py-3 text-xs font-medium transition-colors relative ${idx === activeTask
-                                    ? "bg-zinc-800 text-indigo-400 border-b-2 border-indigo-500"
-                                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
-                                    }`}
-                            >
-                                {isCompleted && <span className="absolute top-1 right-1 text-emerald-400">✓</span>}
-                                Task {t.id}
-                            </button>
-                        );
-                    })}
-                </div>
-
                 {/* Task body */}
                 <div className="p-5 flex-1">
                     <div className="flex items-center gap-3 mb-4">
@@ -240,11 +381,10 @@ export default function Technical2Page() {
                         >
                             {task.difficulty}
                         </span>
-                        <span className="text-xs text-zinc-500">Task {task.id} of {tasks.length}</span>
                         <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-blue-900/50 text-blue-400">
                             Scenario
                         </span>
-                        {isTaskCompleted && (
+                        {isSubmitted && (
                             <span className="ml-auto text-emerald-400 text-xs font-medium">✓ Completed</span>
                         )}
                     </div>
@@ -287,17 +427,17 @@ export default function Technical2Page() {
                     <div className="flex gap-2">
                         <button
                             onClick={handleRun}
-                            disabled={isTaskCompleted}
+                            disabled={isSubmitted}
                             className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            ▶ Run
+                            ▶ Analyze
                         </button>
                         <button
                             onClick={handleSubmit}
-                            disabled={isTaskCompleted}
+                            disabled={isSubmitted}
                             className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isTaskCompleted ? '✓ Submitted' : 'Submit Solution'}
+                            {isSubmitted ? '✓ Submitted' : 'Submit Response'}
                         </button>
                     </div>
                 </div>
@@ -309,10 +449,10 @@ export default function Technical2Page() {
                         onChange={(e) => handleCodeChange(e.target.value)}
                         spellCheck={false}
                         placeholder="Structure your response here... Walk through your thought process step by step."
-                        disabled={isTaskCompleted}
+                        disabled={isSubmitted}
                         className="h-full w-full resize-none bg-zinc-950 p-5 font-mono text-sm text-zinc-300 leading-relaxed outline-none selection:bg-indigo-600/40 disabled:opacity-70 disabled:cursor-not-allowed"
                     />
-                    {isTaskCompleted && (
+                    {isSubmitted && (
                         <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 pointer-events-none">
                             <span className="text-emerald-400 text-lg font-bold">✓ Task completed</span>
                         </div>
