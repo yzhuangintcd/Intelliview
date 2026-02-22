@@ -143,8 +143,16 @@ export default function FeedbackPage() {
                 body: JSON.stringify({ candidateEmail: email }),
             });
 
+            if (response.status === 404) {
+                // No responses found - this is expected if interviews haven't been submitted
+                setError("No interview responses found. Please complete and submit at least one interview to receive feedback.");
+                setIsLoading(false);
+                return;
+            }
+
             if (!response.ok) {
-                throw new Error(`Failed to analyze performance: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to analyze performance: ${response.status}`);
             }
 
             const data = await response.json();
