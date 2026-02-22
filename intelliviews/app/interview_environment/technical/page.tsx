@@ -31,112 +31,237 @@ const tasks = [
             "How would you communicate the urgency of this bug to your PM?",
         ],
     },
+    {
+        id: 2,
+        title: "Race Condition: User Session",
+        difficulty: "Hard",
+        type: "coding",
+        description:
+            "Users are reporting that they're seeing each other's data briefly after login. You suspect a race condition in the session management code. The app uses Redis for sessions and multiple API servers behind a load balancer.",
+        starterCode: `async function createUserSession(userId: string, res: Response) {
+  const sessionId = generateSessionId();
+  
+  // Store session data
+  await redis.set(\`session:\${sessionId}\`, JSON.stringify({ userId }));
+  
+  // Get user data
+  const userData = await db.users.findById(userId);
+  
+  // Set cookie
+  res.cookie('sessionId', sessionId, { httpOnly: true });
+  
+  // Cache user data for performance
+  await redis.set(\`user:\${userId}\`, JSON.stringify(userData), 'EX', 300);
+  
+  return userData;
+}
+
+async function getUserData(sessionId: string) {
+  const session = await redis.get(\`session:\${sessionId}\`);
+  if (!session) return null;
+  
+  const { userId } = JSON.parse(session);
+  
+  // BUG: Race condition here
+  let userData = await redis.get(\`user:\${userId}\`);
+  if (!userData) {
+    userData = await db.users.findById(userId);
+    await redis.set(\`user:\${userId}\`, JSON.stringify(userData), 'EX', 300);
+  }
+  
+  return JSON.parse(userData);
+}`,
+        hints: [
+            "What happens if two users with the same userId log in simultaneously?",
+            "How does the Redis cache key structure contribute to the problem?",
+            "Consider: should sessionId be the cache key instead?",
+            "What if user A logs out while user B is logging in?",
+        ],
+    },
+    {
+        id: 3,
+        title: "Memory Leak: Event Listeners",
+        difficulty: "Medium",
+        type: "coding",
+        description:
+            "The app's memory usage grows over time and eventually crashes after users navigate between pages. You've identified that the WebSocket connection manager might be leaking memory. Fix the leak.",
+        starterCode: `class RealtimeNotifications {
+  private ws: WebSocket | null = null;
+  private listeners: Array<(data: any) => void> = [];
+
+  connect(userId: string) {
+    this.ws = new WebSocket(\`wss://api.example.com/notifications?user=\${userId}\`);
+    
+    this.ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // BUG: Memory leak - listeners never removed
+      this.listeners.forEach(listener => listener(data));
+    };
+  }
+
+  subscribe(callback: (data: any) => void) {
+    this.listeners.push(callback);
+  }
+
+  disconnect() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+  }
+}
+
+// Usage in React component:
+function NotificationBell() {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    const notifications = new RealtimeNotifications();
+    notifications.connect(currentUser.id);
+    
+    notifications.subscribe((data) => {
+      if (data.type === 'notification') {
+        setCount(prev => prev + 1);
+      }
+    });
+    
+    return () => {
+      notifications.disconnect();
+    };
+  }, [currentUser.id]);
+  
+  return <div className="bell">{count}</div>;
+}`,
+        hints: [
+            "What happens to the listeners array when the component unmounts?",
+            "Is disconnect() sufficient to prevent the memory leak?",
+            "Should subscribe() return a cleanup function?",
+            "What if the user navigates away and back 50 times?",
+        ],
+    },
+    {
+        id: 4,
+        title: "SQL Injection Vulnerability",
+        difficulty: "Hard",
+        type: "coding",
+        description:
+            "A security audit found that the search feature is vulnerable to SQL injection. Users can access other users' private data by manipulating the search query. Identify and fix all vulnerabilities.",
+        starterCode: `async function searchUsers(searchTerm: string, currentUserId: string) {
+  // BUG: SQL injection vulnerability
+  const query = \`
+    SELECT id, name, email, bio 
+    FROM users 
+    WHERE (name LIKE '%\${searchTerm}%' OR bio LIKE '%\${searchTerm}%')
+      AND id != \${currentUserId}
+      AND account_status = 'active'
+    ORDER BY name ASC
+  \`;
+  
+  const results = await db.query(query);
+  return results;
+}
+
+// Advanced search with filters
+async function advancedSearch(filters: SearchFilters, currentUserId: string) {
+  let conditions = [];
+  
+  if (filters.name) {
+    conditions.push(\`name LIKE '%\${filters.name}%'\`);
+  }
+  
+  if (filters.location) {
+    conditions.push(\`location = '\${filters.location}'\`);
+  }
+  
+  if (filters.skills) {
+    const skillsList = filters.skills.split(',').map(s => \`'\${s.trim()}'\`).join(',');
+    conditions.push(\`skills IN (\${skillsList})\`);
+  }
+  
+  const whereClause = conditions.length > 0 
+    ? 'WHERE ' + conditions.join(' AND ')
+    : '';
+  
+  const query = \`
+    SELECT * FROM users 
+    \${whereClause}
+    ORDER BY \${filters.sortBy || 'name'} \${filters.sortOrder || 'ASC'}
+  \`;
+  
+  return await db.query(query);
+}`,
+        hints: [
+            "What could an attacker type in searchTerm to see all users?",
+            "How can they inject a UNION query to access other tables?",
+            "The ORDER BY clause is also vulnerable - how?",
+            "What's the proper way to handle dynamic SQL in modern apps?",
+        ],
+    },
 ];
 
 export default function TechnicalPage() {
-    const [activeTask, setActiveTask] = useState(0);
-    const [code, setCode] = useState(tasks[0].starterCode);
+    // Select one random question for this candidate
+    const [selectedTask, setSelectedTask] = useState<typeof tasks[0] | null>(null);
+    const [code, setCode] = useState("");
     const [showHints, setShowHints] = useState(false);
     const [output, setOutput] = useState("");
-    const [taskStartTimes, setTaskStartTimes] = useState<Record<number, number>>({});
-    const [submittedTasks, setSubmittedTasks] = useState<Set<number>>(new Set());
-    const [taskResponses, setTaskResponses] = useState<Record<number, string>>({});
+    const [startTime, setStartTime] = useState<number>(0);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const [candidateEmail, setCandidateEmail] = useState('candidate@example.com');
 
-    const task = tasks[activeTask];
-
-    // Load progress from localStorage on mount
+    // Initialize with random question on mount
     useEffect(() => {
-        const savedResponses = localStorage.getItem('technical1_responses');
-        if (savedResponses) {
-            try {
-                setTaskResponses(JSON.parse(savedResponses));
-            } catch (e) {
-                console.error('Failed to parse saved responses', e);
-            }
-        }
+        // Get previous question ID to avoid showing the same one
+        const previousTaskId = localStorage.getItem('technical1_previousTaskId');
         
-        const savedCompleted = localStorage.getItem('technical1_completed');
-        if (savedCompleted) {
-            try {
-                setSubmittedTasks(new Set(JSON.parse(savedCompleted)));
-            } catch (e) {
-                console.error('Failed to parse completed tasks', e);
-            }
-        }
-
+        // Filter out the previous question if it exists
+        const availableTasks = previousTaskId 
+            ? tasks.filter(t => t.id !== parseInt(previousTaskId))
+            : tasks;
+        
+        // Select random question from available tasks
+        const task = availableTasks[Math.floor(Math.random() * availableTasks.length)];
+        
+        // Save this question as the previous one for next time
+        localStorage.setItem('technical1_previousTaskId', task.id.toString());
+        
+        setSelectedTask(task);
+        
+        // Start fresh - load starter code for this question
+        setCode(task.starterCode);
+        setIsSubmitted(false);
+        
+        // Set start time
+        const now = Date.now();
+        setStartTime(now);
+        
         const email = localStorage.getItem('candidateEmail');
         if (email) {
             setCandidateEmail(email);
         }
     }, []);
 
-    // Load code for current task
-    useEffect(() => {
-        const savedCode = taskResponses[task.id];
-        if (savedCode) {
-            setCode(savedCode);
-        } else {
-            setCode(task.starterCode);
-        }
-    }, [activeTask]);
-
-    // Save responses to localStorage whenever they change
-    useEffect(() => {
-        if (Object.keys(taskResponses).length > 0) {
-            localStorage.setItem('technical1_responses', JSON.stringify(taskResponses));
-        }
-    }, [taskResponses]);
-
-    // Save completed tasks to localStorage
-    useEffect(() => {
-        if (submittedTasks.size > 0) {
-            localStorage.setItem('technical1_completed', JSON.stringify(Array.from(submittedTasks)));
-        }
-    }, [submittedTasks]);
-
-    // Track start time when a task is opened
-    useEffect(() => {
-        if (!taskStartTimes[task.id]) {
-            setTaskStartTimes(prev => ({ ...prev, [task.id]: Date.now() }));
-        }
-    }, [task.id, taskStartTimes]);
-
-    function handleTaskSwitch(idx: number) {
-        // Save current code before switching
-        setTaskResponses(prev => ({
-            ...prev,
-            [task.id]: code
-        }));
-        
-        setActiveTask(idx);
-        setShowHints(false);
-        setOutput("");
+    if (!selectedTask) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>;
     }
+
+    const task = selectedTask;
 
     function handleCodeChange(newCode: string) {
         setCode(newCode);
-        // Auto-save as they type
-        setTaskResponses(prev => ({
-            ...prev,
-            [task.id]: newCode
-        }));
     }
 
     function handleRun() {
-        if (submittedTasks.has(task.id)) return;
+        if (isSubmitted) return;
         setOutput("▶ Running code...\n\n✅ No syntax errors detected.\n⏱ Execution time: 42ms\n\n[AI Agent]: I see your changes. Let me analyze your approach... Also, tell me how you'd prioritize finishing this vs responding to a production incident.");
     }
 
-    const isTaskCompleted = submittedTasks.has(task.id);
-
     async function handleSubmit() {
-        if (isTaskCompleted) return;
+        if (isSubmitted) return;
         
         setOutput("📤 Submitting solution...\n\n[AI Agent]: Processing your submission...");
         
         // Calculate time spent
-        const startTime = taskStartTimes[task.id] || Date.now();
         const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
 
         // Save to database for ALL task types
@@ -168,13 +293,13 @@ export default function TechnicalPage() {
             console.log('✅ Technical solution saved to database');
             
             // Mark as completed
-            setSubmittedTasks(prev => new Set(prev).add(task.id));
-            setOutput("📤 Solution submitted!\n\n[AI Agent]: Thank you. I'm reviewing your solution now. I'll assess correctness, code quality, edge-case handling, and your reasoning. Please move on to the next task.");
+            setIsSubmitted(true);
+            setOutput("📤 Solution submitted!\n\n[AI Agent]: Thank you. I'm reviewing your solution now. I'll assess correctness, code quality, edge-case handling, and your reasoning.");
         } catch (error) {
             console.error('❌ Failed to save to database:', error);
             // Still mark as completed even if DB save fails
-            setSubmittedTasks(prev => new Set(prev).add(task.id));
-            setOutput("📤 Solution submitted! (Note: Failed to save to database, but you can continue)\n\n[AI Agent]: Thank you. I'm reviewing your solution now. Please move on to the next task.");
+            setIsSubmitted(true);
+            setOutput("📤 Solution submitted! (Note: Failed to save to database, but you can continue)\n\n[AI Agent]: Thank you. I'm reviewing your solution now.");
         }
     }
 
@@ -182,26 +307,6 @@ export default function TechnicalPage() {
         <div className="flex h-[calc(100vh-7rem)] overflow-hidden">
             {/* ─── Left Panel: Task description ─── */}
             <div className="w-[420px] shrink-0 border-r border-zinc-800 bg-zinc-900 flex flex-col overflow-y-auto">
-                {/* Task selector tabs */}
-                <div className="flex border-b border-zinc-800">
-                    {tasks.map((t, idx) => {
-                        const isCompleted = submittedTasks.has(t.id);
-                        return (
-                            <button
-                                key={t.id}
-                                onClick={() => handleTaskSwitch(idx)}
-                                className={`flex-1 px-3 py-3 text-xs font-medium transition-colors relative ${idx === activeTask
-                                    ? "bg-zinc-800 text-indigo-400 border-b-2 border-indigo-500"
-                                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
-                                    }`}
-                            >
-                                {isCompleted && <span className="absolute top-1 right-1 text-emerald-400">✓</span>}
-                                Task {t.id}
-                            </button>
-                        );
-                    })}
-                </div>
-
                 {/* Task body */}
                 <div className="p-5 flex-1">
                     <div className="flex items-center gap-3 mb-4">
@@ -213,8 +318,7 @@ export default function TechnicalPage() {
                         >
                             {task.difficulty}
                         </span>
-                        <span className="text-xs text-zinc-500">Task {task.id} of {tasks.length}</span>
-                        {isTaskCompleted && (
+                        {isSubmitted && (
                             <span className="ml-auto text-emerald-400 text-xs font-medium">✓ Completed</span>
                         )}
                     </div>
@@ -257,17 +361,17 @@ export default function TechnicalPage() {
                     <div className="flex gap-2">
                         <button
                             onClick={handleRun}
-                            disabled={isTaskCompleted}
+                            disabled={isSubmitted}
                             className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             ▶ Run
                         </button>
                         <button
                             onClick={handleSubmit}
-                            disabled={isTaskCompleted}
+                            disabled={isSubmitted}
                             className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isTaskCompleted ? '✓ Submitted' : 'Submit Solution'}
+                            {isSubmitted ? '✓ Submitted' : 'Submit Solution'}
                         </button>
                     </div>
                 </div>
@@ -279,10 +383,10 @@ export default function TechnicalPage() {
                         onChange={(e) => handleCodeChange(e.target.value)}
                         spellCheck={false}
                         placeholder={task.type === 'coding' ? 'Write your code here...' : 'Structure your response here... Walk through your thought process step by step.'}
-                        disabled={isTaskCompleted}
+                        disabled={isSubmitted}
                         className={`h-full w-full resize-none bg-zinc-950 p-5 font-mono text-sm leading-relaxed outline-none selection:bg-indigo-600/40 disabled:opacity-70 disabled:cursor-not-allowed ${task.type === 'coding' ? 'text-emerald-300' : 'text-zinc-300'}`}
                     />
-                    {isTaskCompleted && (
+                    {isSubmitted && (
                         <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 pointer-events-none">
                             <span className="text-emerald-400 text-lg font-bold">✓ Task completed</span>
                         </div>
