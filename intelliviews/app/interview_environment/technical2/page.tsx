@@ -175,7 +175,7 @@ export default function Technical2Page() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     candidateId: `candidate-${Date.now()}`,
-                    candidateEmail: 'candidate@example.com',
+                    candidateEmail: candidateEmail,
                     interviewType: 'technical2',
                     taskId: task.id,
                     taskTitle: task.title,
@@ -199,6 +199,8 @@ export default function Technical2Page() {
             setOutput("📤 Response submitted!\n\n[AI Agent]: Thank you for walking me through your thinking. I'm evaluating your structure, trade-off analysis, and communication strategy. Let's move to the next scenario.");
         } catch (error) {
             console.error('❌ Failed to save to database:', error);
+            // Still mark as completed even if DB save fails
+            setSubmittedTasks(prev => new Set(prev).add(task.id));
             setOutput("📤 Response submitted! (Note: Failed to save to database, but you can continue)\n\n[AI Agent]: Thank you for walking me through your thinking. Let's move to the next scenario.");
         }
     }

@@ -135,24 +135,18 @@ export default function TechnicalPage() {
         
         setOutput("📤 Submitting solution...\n\n[AI Agent]: Processing your submission...");
         
-        // Skip database save for coding questions
-        if (task.type === 'coding') {
-            setOutput("📤 Solution submitted!\n\n[AI Agent]: Thank you. I'm reviewing your solution now. I'll assess correctness, code quality, edge-case handling, and your reasoning. Please move on to the next task.");
-            return;
-        }
-        
         // Calculate time spent
         const startTime = taskStartTimes[task.id] || Date.now();
         const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
 
-        // Save to database (scenarios only)
+        // Save to database for ALL task types
         try {
             await fetch('/api/save-response', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     candidateId: `candidate-${Date.now()}`,
-                    candidateEmail: 'candidate@example.com',
+                    candidateEmail: candidateEmail,
                     interviewType: 'technical1',
                     taskId: task.id,
                     taskTitle: task.title,
@@ -172,10 +166,14 @@ export default function TechnicalPage() {
                 }),
             });
             console.log('✅ Technical solution saved to database');
+            
+            // Mark as completed
             setSubmittedTasks(prev => new Set(prev).add(task.id));
             setOutput("📤 Solution submitted!\n\n[AI Agent]: Thank you. I'm reviewing your solution now. I'll assess correctness, code quality, edge-case handling, and your reasoning. Please move on to the next task.");
         } catch (error) {
             console.error('❌ Failed to save to database:', error);
+            // Still mark as completed even if DB save fails
+            setSubmittedTasks(prev => new Set(prev).add(task.id));
             setOutput("📤 Solution submitted! (Note: Failed to save to database, but you can continue)\n\n[AI Agent]: Thank you. I'm reviewing your solution now. Please move on to the next task.");
         }
     }
