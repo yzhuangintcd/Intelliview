@@ -11,9 +11,7 @@ interface RequestBody {
     title: string;
     situation: string;
   };
-  candidateResponse: string;
   role: string; // e.g., "Senior Software Engineer", "Full Stack Developer"
-  questionNumber: number;
 }
 
 // Budget tracking (simple in-memory, reset on server restart)
@@ -23,7 +21,7 @@ const BUDGET_TOKENS = 20000; // ~$0.30 with Haiku pricing (10k tokens = ~$0.15)
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as RequestBody;
-    const { scenario, candidateResponse, role, questionNumber } = body;
+    const { scenario, role } = body;
 
     // Check budget
     if (totalTokensUsed > BUDGET_TOKENS * 0.9) {
@@ -34,25 +32,23 @@ export async function POST(request: NextRequest) {
     }
 
     const systemPrompt = `You are a concise technical interviewer evaluating candidates for a ${role} position. 
-Your job is to ask follow-up questions based on their responses to behavioral scenarios.
+Your job is to ask ONE focused question for each behavioral scenario presented to you.
 
 Guidelines:
-- Keep responses VERY short (1-2 sentences max, about 20-30 words)
-- Ask one specific follow-up question at a time
+- Keep the question short (1-2 sentences max, about 20-30 words)
+- Ask a specific, probing question that tests their decision-making, communication, or integrity
 - Be direct and professional
-- Focus on understanding their decision-making, communication, and integrity
 - Do NOT repeat the scenario back to them
+- The question should make them think deeply about their approach
 
 Scenario: "${scenario.title}" - ${scenario.situation}`;
 
-    const userMessage = `The candidate responded: "${candidateResponse}"
-
-This is follow-up question #${questionNumber}. Ask a brief, specific follow-up to dig deeper into their thinking.`;
+    const userMessage = `Generate ONE focused interview question for this scenario. The question should probe how the candidate would handle this situation, focusing on their decision-making process and values.`;
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 150,
-      temperature: 1,
+      max_tokens: 100,
+      temperature: 0.8,
       system: systemPrompt,
       messages: [
         {

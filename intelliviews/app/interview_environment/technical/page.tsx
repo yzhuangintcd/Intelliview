@@ -134,8 +134,60 @@ export default function TechnicalPage() {
     const [output, setOutput] = useState("");
     const [taskStartTimes, setTaskStartTimes] = useState<Record<number, number>>({});
     const [submittedTasks, setSubmittedTasks] = useState<Set<number>>(new Set());
+    const [taskResponses, setTaskResponses] = useState<Record<number, string>>({});
+    const [candidateEmail, setCandidateEmail] = useState('candidate@example.com');
 
     const task = tasks[activeTask];
+
+    // Load progress from localStorage on mount
+    useEffect(() => {
+        const savedResponses = localStorage.getItem('technical1_responses');
+        if (savedResponses) {
+            try {
+                setTaskResponses(JSON.parse(savedResponses));
+            } catch (e) {
+                console.error('Failed to parse saved responses', e);
+            }
+        }
+        
+        const savedCompleted = localStorage.getItem('technical1_completed');
+        if (savedCompleted) {
+            try {
+                setSubmittedTasks(new Set(JSON.parse(savedCompleted)));
+            } catch (e) {
+                console.error('Failed to parse completed tasks', e);
+            }
+        }
+
+        const email = localStorage.getItem('candidateEmail');
+        if (email) {
+            setCandidateEmail(email);
+        }
+    }, []);
+
+    // Load code for current task
+    useEffect(() => {
+        const savedCode = taskResponses[task.id];
+        if (savedCode) {
+            setCode(savedCode);
+        } else {
+            setCode(task.starterCode);
+        }
+    }, [activeTask]);
+
+    // Save responses to localStorage whenever they change
+    useEffect(() => {
+        if (Object.keys(taskResponses).length > 0) {
+            localStorage.setItem('technical1_responses', JSON.stringify(taskResponses));
+        }
+    }, [taskResponses]);
+
+    // Save completed tasks to localStorage
+    useEffect(() => {
+        if (submittedTasks.size > 0) {
+            localStorage.setItem('technical1_completed', JSON.stringify(Array.from(submittedTasks)));
+        }
+    }, [submittedTasks]);
 
     // Track start time when a task is opened
     useEffect(() => {
@@ -145,17 +197,36 @@ export default function TechnicalPage() {
     }, [task.id, taskStartTimes]);
 
     function handleTaskSwitch(idx: number) {
+        // Save current code before switching
+        setTaskResponses(prev => ({
+            ...prev,
+            [task.id]: code
+        }));
+        
         setActiveTask(idx);
-        setCode(tasks[idx].starterCode);
         setShowHints(false);
         setOutput("");
     }
 
+    function handleCodeChange(newCode: string) {
+        setCode(newCode);
+        // Auto-save as they type
+        setTaskResponses(prev => ({
+            ...prev,
+            [task.id]: newCode
+        }));
+    }
+
     function handleRun() {
+        if (submittedTasks.has(task.id)) return;
         setOutput("▶ Running code...\n\n✅ No syntax errors detected.\n⏱ Execution time: 42ms\n\n[AI Agent]: I see your changes. Let me analyze your approach... Also, tell me how you'd prioritize finishing this vs responding to a production incident.");
     }
 
+    const isTaskCompleted = submittedTasks.has(task.id);
+
     async function handleSubmit() {
+        if (isTaskCompleted) return;
+        
         setOutput("📤 Submitting solution...\n\n[AI Agent]: Processing your submission...");
         
         // Skip database save for coding questions
@@ -185,6 +256,7 @@ export default function TechnicalPage() {
                         difficulty: task.difficulty,
                         type: task.type,
                         hintsViewed: showHints,
+                        completed: true,
                         question: {
                             description: task.description,
                             starterCode: task.starterCode,
@@ -208,18 +280,22 @@ export default function TechnicalPage() {
             <div className="w-[420px] shrink-0 border-r border-zinc-800 bg-zinc-900 flex flex-col overflow-y-auto">
                 {/* Task selector tabs */}
                 <div className="flex border-b border-zinc-800">
-                    {tasks.map((t, idx) => (
-                        <button
-                            key={t.id}
-                            onClick={() => handleTaskSwitch(idx)}
-                            className={`flex-1 px-3 py-3 text-xs font-medium transition-colors ${idx === activeTask
-                                ? "bg-zinc-800 text-indigo-400 border-b-2 border-indigo-500"
-                                : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
-                                }`}
-                        >
-                            Task {t.id}
-                        </button>
-                    ))}
+                    {tasks.map((t, idx) => {
+                        const isCompleted = submittedTasks.has(t.id);
+                        return (
+                            <button
+                                key={t.id}
+                                onClick={() => handleTaskSwitch(idx)}
+                                className={`flex-1 px-3 py-3 text-xs font-medium transition-colors relative ${idx === activeTask
+                                    ? "bg-zinc-800 text-indigo-400 border-b-2 border-indigo-500"
+                                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
+                                    }`}
+                            >
+                                {isCompleted && <span className="absolute top-1 right-1 text-emerald-400">✓</span>}
+                                Task {t.id}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Task body */}
@@ -234,6 +310,9 @@ export default function TechnicalPage() {
                             {task.difficulty}
                         </span>
                         <span className="text-xs text-zinc-500">Task {task.id} of {tasks.length}</span>
+                        {isTaskCompleted && (
+                            <span className="ml-auto text-emerald-400 text-xs font-medium">✓ Completed</span>
+                        )}
                     </div>
 
                     <h2 className="text-xl font-bold mb-3">{task.title}</h2>
@@ -291,28 +370,36 @@ export default function TechnicalPage() {
                     <div className="flex gap-2">
                         <button
                             onClick={handleRun}
-                            className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-zinc-700 transition-colors"
+                            disabled={isTaskCompleted}
+                            className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             ▶ Run
                         </button>
                         <button
                             onClick={handleSubmit}
-                            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition-colors"
+                            disabled={isTaskCompleted}
+                            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Submit Solution
+                            {isTaskCompleted ? '✓ Submitted' : 'Submit Solution'}
                         </button>
                     </div>
                 </div>
 
                 {/* Code/Response textarea */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden relative">
                     <textarea
                         value={code}
-                        onChange={(e) => setCode(e.target.value)}
+                        onChange={(e) => handleCodeChange(e.target.value)}
                         spellCheck={false}
                         placeholder={task.type === 'coding' ? 'Write your code here...' : 'Structure your response here... Walk through your thought process step by step.'}
-                        className={`h-full w-full resize-none bg-zinc-950 p-5 font-mono text-sm leading-relaxed outline-none selection:bg-indigo-600/40 ${task.type === 'coding' ? 'text-emerald-300' : 'text-zinc-300'}`}
+                        disabled={isTaskCompleted}
+                        className={`h-full w-full resize-none bg-zinc-950 p-5 font-mono text-sm leading-relaxed outline-none selection:bg-indigo-600/40 disabled:opacity-70 disabled:cursor-not-allowed ${task.type === 'coding' ? 'text-emerald-300' : 'text-zinc-300'}`}
                     />
+                    {isTaskCompleted && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 pointer-events-none">
+                            <span className="text-emerald-400 text-lg font-bold">✓ Task completed</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Output panel */}

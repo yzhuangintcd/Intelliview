@@ -89,6 +89,34 @@ export default function AdminResponsesPage() {
           ))}
         </div>
 
+        {/* Completion Summary */}
+        {!loading && !error && responses.length > 0 && (
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4">
+              <p className="text-xs text-zinc-500 mb-1">Total Responses</p>
+              <p className="text-2xl font-bold text-zinc-100">{responses.length}</p>
+            </div>
+            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4">
+              <p className="text-xs text-zinc-500 mb-1">Completed</p>
+              <p className="text-2xl font-bold text-emerald-400">
+                {responses.filter(r => r.metadata?.completed).length}
+              </p>
+            </div>
+            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4">
+              <p className="text-xs text-zinc-500 mb-1">In Progress</p>
+              <p className="text-2xl font-bold text-amber-400">
+                {responses.filter(r => !r.metadata?.completed).length}
+              </p>
+            </div>
+            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4">
+              <p className="text-xs text-zinc-500 mb-1">Completion Rate</p>
+              <p className="text-2xl font-bold text-indigo-400">
+                {Math.round((responses.filter(r => r.metadata?.completed).length / responses.length) * 100)}%
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Loading State */}
         {loading && (
           <div className="text-center py-12">
