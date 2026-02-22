@@ -208,6 +208,8 @@ export default function TechnicalPage() {
     const [startTime, setStartTime] = useState<number>(0);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [candidateEmail, setCandidateEmail] = useState('candidate@example.com');
+    const [checksUsed, setChecksUsed] = useState(0);
+    const [isCheckingCode, setIsCheckingCode] = useState(false);
 
     // Initialize with random question on mount
     useEffect(() => {
@@ -262,6 +264,40 @@ export default function TechnicalPage() {
         setOutput("▶ Running code...\n\n✅ No syntax errors detected.\n⏱ Execution time: 42ms\n\n[AI Agent]: I see your changes. Let me analyze your approach... Also, tell me how you'd prioritize finishing this vs responding to a production incident.");
     }
 
+    async function handleCheckCode() {
+        if (isSubmitted || checksUsed >= 3 || isCheckingCode) return;
+        
+        setIsCheckingCode(true);
+        setOutput("🔍 Checking your code...\n\n[Interviewer]: Let me take a look at what you've written so far...");
+
+        try {
+            const response = await fetch('/api/check-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code,
+                    taskDescription: task.description,
+                    starterCode: task.starterCode,
+                    checksUsed,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setChecksUsed(prev => prev + 1);
+                setOutput(`🔍 Code Check #${checksUsed + 1}/3\n\n[Interviewer]: ${data.feedback}\n\n💡 Checks remaining: ${data.checksRemaining}`);
+            } else {
+                setOutput(`❌ ${data.error}\n\nPlease continue working on your solution.`);
+            }
+        } catch (error) {
+            console.error('❌ Failed to check code:', error);
+            setOutput("❌ Failed to check code. Please try again or continue with your solution.");
+        } finally {
+            setIsCheckingCode(false);
+        }
+    }
+
     async function handleSubmit() {
         if (isSubmitted) return;
         
@@ -287,6 +323,7 @@ export default function TechnicalPage() {
                         difficulty: task.difficulty,
                         type: task.type,
                         hintsViewed: showHints,
+                        checksUsed: checksUsed,
                         completed: true,
                         question: {
                             description: task.description,
@@ -365,6 +402,13 @@ export default function TechnicalPage() {
                         </span>
                     </div>
                     <div className="flex gap-2">
+                        <button
+                            onClick={handleCheckCode}
+                            disabled={checksUsed >= 3 || isCheckingCode || isSubmitted}
+                            className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isCheckingCode ? '🔍 Checking...' : `Check Code (${3 - checksUsed}/3)`}
+                        </button>
                         <button
                             onClick={handleSubmit}
                             disabled={isSubmitted}
