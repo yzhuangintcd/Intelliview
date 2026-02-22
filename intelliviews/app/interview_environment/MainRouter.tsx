@@ -78,7 +78,8 @@ export default function MainRouter() {
         if (behaviouralProgress) {
             try {
                 const progress = JSON.parse(behaviouralProgress);
-                const hasCompleted = Object.values(progress).some((p: any) => p.completed);
+                // Check if any scenario is completed
+                const hasCompleted = Object.values(progress).some((p: any) => p?.completed === true);
                 if (hasCompleted) {
                     completed.add('behavioural');
                 }

@@ -342,10 +342,10 @@ export default function BehaviouralPage() {
                     ← Back to Technical 2
                 </Link>
                 <Link
-                    href="/interview_environment"
+                    href="/interview_environment/feedback"
                     className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
                 >
-                    Complete Interview ✓
+                    Complete Interview & Get Feedback ✓
                 </Link>
             </div>
         </div>
