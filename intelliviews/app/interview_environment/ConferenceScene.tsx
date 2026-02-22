@@ -109,28 +109,20 @@ function Character({
         <meshStandardMaterial color={shirtColor} roughness={0.65} />
       </mesh>
 
-      {/* Arms */}
+      {/* Arms - hanging by the sides */}
       {[
-        { x: -0.24, rz: 0.2 },
-        { x: 0.24, rz: -0.2 },
+        { x: -0.18, rz: -0.1 },
+        { x: 0.18, rz: 0.1 },
       ].map(({ x, rz }) => (
         <mesh key={x} position={[x, 0.97, 0]} rotation={[0, 0, rz]} castShadow>
-          <capsuleGeometry args={[0.045, 0.18, 8, 10]} />
+          <capsuleGeometry args={[0.045, 0.3, 8, 10]} />
           <meshStandardMaterial color={shirtColor} roughness={0.65} />
         </mesh>
       ))}
-      {[
-        { x: -0.28, rx: 1.1, rz: 0.1 },
-        { x: 0.28, rx: 1.1, rz: -0.1 },
-      ].map(({ x, rx, rz }) => (
-        <mesh key={x} position={[x, 0.8, 0.18]} rotation={[rx, 0, rz]}>
-          <capsuleGeometry args={[0.038, 0.18, 8, 10]} />
-          <meshStandardMaterial color={shirtColor} roughness={0.65} />
-        </mesh>
-      ))}
-      {[-0.28, 0.28].map((x) => (
-        <mesh key={x} position={[x, 0.76, 0.34]}>
-          <sphereGeometry args={[0.035, 10, 10]} />
+      {/* Hands */}
+      {[-0.18, 0.18].map((x) => (
+        <mesh key={x} position={[x, 0.77, 0]}>
+          <sphereGeometry args={[0.04, 10, 10]} />
           <meshStandardMaterial color={skinTone} roughness={0.55} />
         </mesh>
       ))}
@@ -293,7 +285,7 @@ function ConferenceTable() {
         </mesh>
       ))}
 
-      {[-0.8, 0.3, 1.0].map((x, i) => (
+      {[-1.6, 0, 1.6].map((x, i) => (
         <RoundedBox
           key={i}
           args={[0.2, 0.002, 0.28]}
@@ -440,22 +432,40 @@ export default function ConferenceScene({
           color="#8a7a6a"
         />
 
-        <Chair position={[-1.6, 0, -0.85]} rotation={[0, Math.PI, 0]} />
-        <Chair position={[0, 0, -0.85]} rotation={[0, Math.PI, 0]} />
-        <Chair position={[1.6, 0, -0.85]} rotation={[0, Math.PI, 0]} />
-        <Chair position={[0, 0, 1.15]} rotation={[0, 0, 0]} />
+        <Chair position={[-1.6, 0, -0.85]} rotation={[0, 0, 0]} />
+        <Chair position={[0, 0, -0.85]} rotation={[0, 0, 0]} />
+        <Chair position={[1.6, 0, -0.85]} rotation={[0, 0, 0]} />
+        <Chair position={[0, 0, 1.15]} rotation={[0, Math.PI, 0]} />
 
-        {interviewers.map((p) => (
+        {/* Interviewers */}
+        {interviewers.map((p) => {
+          // Rotate interviewers to face the candidate
+          const rotation = p.seatX === -1.6 ? 0.3 : p.seatX === 1.6 ? -0.3 : 0;
+          return (
+            <group key={p.id} position={[p.seatX, 0, -1.0]} rotation={[0, rotation, 0]}>
+              <Character
+                position={[0, 0, 0]}
+                skinTone={p.skinTone}
+                hairColor={p.hairColor}
+                hairStyle={p.hairStyle}
+                shirtColor={p.shirtColor}
+                onClick={() => onSelect(p.id)}
+              />
+            </group>
+          );
+        })}
+
+        {/* Candidate */}
+        <group position={[0, -0.25, 1.18]} rotation={[0, Math.PI, 0]}>
           <Character
-            key={p.id}
-            position={[p.seatX, 0, -0.82]}
-            skinTone={p.skinTone}
-            hairColor={p.hairColor}
-            hairStyle={p.hairStyle}
-            shirtColor={p.shirtColor}
-            onClick={() => onSelect(p.id)}
+            position={[0, 0, 0]}
+            skinTone="#f4c4a0"
+            hairColor="#3a2618"
+            hairStyle="short"
+            shirtColor="#4a5568"
+            onClick={() => {}}
           />
-        ))}
+        </group>
       </Canvas>
     </div>
   );
