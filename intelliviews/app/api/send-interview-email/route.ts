@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Email content
-    const interviewLink = `http://localhost:3000/interview_environment`;
+    const interviewLink = `http://localhost:3000/interview_environment?email=${encodeURIComponent(candidateEmail)}`;
     const emailHtml = `
       <html>
         <head>

@@ -235,10 +235,16 @@ export default function TechnicalPage() {
         const now = Date.now();
         setStartTime(now);
         
-        const email = localStorage.getItem('candidateEmail');
-        if (email) {
-            setCandidateEmail(email);
+        // Get email from localStorage or URL params
+        let email = localStorage.getItem('candidateEmail');
+        if (!email) {
+            const params = new URLSearchParams(window.location.search);
+            email = params.get('email') || 'candidate@example.com';
+            if (email) {
+                localStorage.setItem('candidateEmail', email);
+            }
         }
+        setCandidateEmail(email);
     }, []);
 
     if (!selectedTask) {

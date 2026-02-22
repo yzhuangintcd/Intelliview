@@ -83,6 +83,14 @@ export default function InterviewDashboard() {
 
   useEffect(() => {
     setMounted(true);
+    
+    // Capture email from URL and store in localStorage
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+    if (email) {
+      localStorage.setItem('candidateEmail', email);
+      console.log('📧 Candidate email captured:', email);
+    }
   }, []);
 
   function handleSelect(id: string) {
